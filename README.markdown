@@ -1,31 +1,21 @@
 
 # Refactorial
 
-Refactoiral is a Clang-based refactoring tool for C, C++, Objective-C, and Objective-C++. It has a number of nice properties:
+Refactoiral is a Clang-based refactoring tool for C/C++ It has a number of nice properties:
 
 1.  It runs independent of any IDE
-2.  It refactors C, C++, Objective-C and Objective-C++ programs
-3.  It can refactor both a library and its clients using the same script, so that library developers can upgrade libraries more easily by distributing the script
+2.  It refactors C, C++, programs
+3.  It having the script to respresiton your action
 4.  It is extensible
 
-
-## Installation
-
-There are two ways to install Refactorial:
-
-*   Download a pre-built binary. Currently on Mac OS X only. Get it here:
-    https://github.com/lukhnos/refactorial/downloads
-*   Build on your own. See below.
-
+## Before 
+sudo yum install llvm llvm-static 
 
 ## Building Refactorial
-
-We have built Refactorial on both Linux and Mac OS X.
 
 You need the following dependencies:
 
 *   LLVM and Clang
-*   yaml-cpp
 *   Boost (needed by yaml-cpp)
 *   pcre
 

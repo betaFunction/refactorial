@@ -25,9 +25,8 @@
 #include <string>
 #include <vector>
 
-namespace clang
-{
-	class Rewriter;
+namespace clang {
+class Rewriter;
 }
 
 /// \brief A text replacement.
@@ -45,16 +44,17 @@ public:
   /// \param FilePath A source file accessible via a SourceManager.
   /// \param Offset The byte offset of the start of the range in the file.
   /// \param Length The length of the range in bytes.
-  Replacement(llvm::StringRef FilePath, unsigned Offset,
-              unsigned Length, llvm::StringRef ReplacementText);
+  Replacement(llvm::StringRef FilePath, unsigned Offset, unsigned Length,
+              llvm::StringRef ReplacementText);
 
   /// \brief Creates a Replacement of the range [Start, Start+Length) with
   /// ReplacementText.
-  Replacement(clang::SourceManager &Sources, clang::SourceLocation Start, unsigned Length,
-              llvm::StringRef ReplacementText);
+  Replacement(clang::SourceManager &Sources, clang::SourceLocation Start,
+              unsigned Length, llvm::StringRef ReplacementText);
 
   /// \brief Creates a Replacement of the given range with ReplacementText.
-  Replacement(clang::SourceManager &Sources, const clang::CharSourceRange &Range,
+  Replacement(clang::SourceManager &Sources,
+              const clang::CharSourceRange &Range,
               llvm::StringRef ReplacementText);
 
   /// \brief Creates a Replacement of the node with ReplacementText.
@@ -86,10 +86,12 @@ public:
     bool operator()(const Replacement &R1, const Replacement &R2) const;
   };
 
- private:
-  void setFromSourceLocation(clang::SourceManager &Sources, clang::SourceLocation Start,
-                             unsigned Length, llvm::StringRef ReplacementText);
-  void setFromSourceRange(clang::SourceManager &Sources, const clang::CharSourceRange &Range,
+private:
+  void setFromSourceLocation(clang::SourceManager &Sources,
+                             clang::SourceLocation Start, unsigned Length,
+                             llvm::StringRef ReplacementText);
+  void setFromSourceRange(clang::SourceManager &Sources,
+                          const clang::CharSourceRange &Range,
                           llvm::StringRef ReplacementText);
 
   std::string FilePath;
@@ -134,12 +136,12 @@ private:
 };
 
 template <typename Node>
-Replacement::Replacement(clang::SourceManager &Sources, const Node &NodeToReplace,
+Replacement::Replacement(clang::SourceManager &Sources,
+                         const Node &NodeToReplace,
                          llvm::StringRef ReplacementText) {
   const clang::CharSourceRange Range =
-	  clang::CharSourceRange::getTokenRange(NodeToReplace->getSourceRange());
+      clang::CharSourceRange::getTokenRange(NodeToReplace->getSourceRange());
   setFromSourceRange(Sources, Range, ReplacementText);
 }
 
 #endif // end REFACTORING_H
-

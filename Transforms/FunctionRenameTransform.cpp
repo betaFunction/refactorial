@@ -10,18 +10,16 @@ using namespace clang;
 class FunctionRenameTransform : public RenameTransform {
 public:
   virtual void HandleTranslationUnit(ASTContext &);
-  
-  
+
 protected:
   void collectAndRenameFunctionDecl(DeclContext *DC, bool topLevel = false);
-  void processDeclContext(DeclContext *DC, bool topLevel = false);  
+  void processDeclContext(DeclContext *DC, bool topLevel = false);
   void processStmt(Stmt *S);
 };
 
 REGISTER_TRANSFORM(FunctionRenameTransform);
 
-void FunctionRenameTransform::HandleTranslationUnit(ASTContext &C)
-{
+void FunctionRenameTransform::HandleTranslationUnit(ASTContext &C) {
   auto I = loadConfig("FunctionRename", "Functions");
   if (!I) {
     return;
@@ -33,23 +31,22 @@ void FunctionRenameTransform::HandleTranslationUnit(ASTContext &C)
 }
 
 void FunctionRenameTransform::collectAndRenameFunctionDecl(DeclContext *DC,
-                                                           bool topLevel)
-{
+                                                           bool topLevel) {
   // TODO: Skip globally touched locations
   // if a.cpp and b.cpp both include c.h, then once a.cpp is processed,
   // we cas skip any location that is not in b.cpp
 
   pushIndent();
-  
-  for(auto I = DC->decls_begin(), E = DC->decls_end(); I != E; ++I) {
+
+  for (auto I = DC->decls_begin(), E = DC->decls_end(); I != E; ++I) {
     auto L = (*I)->getLocation();
     if (topLevel && shouldIgnore(L)) {
       continue;
     }
-    
+
     if (auto D = dyn_cast<FunctionDecl>(*I)) {
       // TODO: If it's a ctor/dtor, it's an error
-      
+
       std::string newName;
       if (nameMatches(D, newName)) {
         renameLocation(D->getLocation(), newName);
@@ -59,7 +56,8 @@ void FunctionRenameTransform::collectAndRenameFunctionDecl(DeclContext *DC,
       pushIndent();
       if (auto M = dyn_cast<CXXMethodDecl>(D)) {
         for (auto MI = M->begin_overridden_methods(),
-             ME = M->end_overridden_methods(); MI != ME; ++MI) {
+                  ME = M->end_overridden_methods();
+             MI != ME; ++MI) {
           if (nameMatches(*MI, newName, true)) {
             renameLocation(D->getLocation(), newName);
           }
@@ -67,19 +65,17 @@ void FunctionRenameTransform::collectAndRenameFunctionDecl(DeclContext *DC,
       }
       popIndent();
     }
-    
-    // descend into the next level (namespace, etc.)    
+
+    // descend into the next level (namespace, etc.)
     if (auto innerDC = dyn_cast<DeclContext>(*I)) {
       collectAndRenameFunctionDecl(innerDC);
     }
   }
-  popIndent();  
+  popIndent();
 }
 
-
 void FunctionRenameTransform::processDeclContext(DeclContext *DC,
-                                                 bool topLevel)
-{  
+                                                 bool topLevel) {
   // TODO: ignore system headers (/usr, /opt, /System and /Library)
   // TODO: Skip globally touched locations
   //
@@ -88,8 +84,8 @@ void FunctionRenameTransform::processDeclContext(DeclContext *DC,
   //
 
   pushIndent();
-  
-  for(auto I = DC->decls_begin(), E = DC->decls_end(); I != E; ++I) {
+
+  for (auto I = DC->decls_begin(), E = DC->decls_end(); I != E; ++I) {
     if (auto D = dyn_cast<FunctionDecl>(*I)) {
       // TODO: If it's a ctor/dtor, it's an error
 
@@ -102,28 +98,26 @@ void FunctionRenameTransform::processDeclContext(DeclContext *DC,
           }
         }
       }
-      
+
       // rename the params' types
       for (auto PI = D->param_begin(), PE = D->param_end(); PI != PE; ++PI) {
         if ((*PI)->hasInit()) {
           processStmt((*PI)->getInit());
-        }  
+        }
       }
-      
+
       // handle body
       if (auto B = D->getBody()) {
         if (stmtInSameFileAsDecl(B, D)) {
           processStmt(B);
         }
       }
-    }
-    else if (auto D = dyn_cast<VarDecl>(*I)) {
+    } else if (auto D = dyn_cast<VarDecl>(*I)) {
       // handle initialization
       if (D->hasInit()) {
         processStmt(D->getInit());
       }
-    }
-    else if (auto D = dyn_cast<ObjCMethodDecl>(*I)) {
+    } else if (auto D = dyn_cast<ObjCMethodDecl>(*I)) {
       // handle body
       if (auto B = D->getBody()) {
         if (stmtInSameFileAsDecl(B, D)) {
@@ -131,11 +125,11 @@ void FunctionRenameTransform::processDeclContext(DeclContext *DC,
         }
       }
     }
-    
+
     // TODO: Handle ObjC interface/impl, inheritance, protocol
     // TODO: Whether we should support category rename?
 
-    // descend into the next level (namespace, etc.)    
+    // descend into the next level (namespace, etc.)
     if (auto innerDC = dyn_cast<DeclContext>(*I)) {
       processDeclContext(innerDC);
     }
@@ -143,14 +137,14 @@ void FunctionRenameTransform::processDeclContext(DeclContext *DC,
   popIndent();
 }
 
-void FunctionRenameTransform::processStmt(Stmt *S)
-{
+void FunctionRenameTransform::processStmt(Stmt *S) {
   if (!S) {
     return;
   }
 
   pushIndent();
-  // llvm::errs() << indent() << "Stmt: " << S->getStmtClassName() << ", at: "<< loc(S->getLocStart()) << "\n";
+  // llvm::errs() << indent() << "Stmt: " << S->getStmtClassName() << ", at: "<<
+  // loc(S->getLocStart()) << "\n";
 
   if (auto E = dyn_cast<MemberExpr>(S)) {
     // handle the case for member references (e.g. calling foo(), A::foo())
@@ -162,8 +156,7 @@ void FunctionRenameTransform::processStmt(Stmt *S)
         }
       }
     }
-  }
-  else if (auto E = dyn_cast<DeclRefExpr>(S)) {
+  } else if (auto E = dyn_cast<DeclRefExpr>(S)) {
     // handle C function calls
     if (auto D = E->getDecl()) {
       if (dyn_cast<FunctionDecl>(D)) {
@@ -178,6 +171,6 @@ void FunctionRenameTransform::processStmt(Stmt *S)
   for (auto I = S->child_begin(), E = S->child_end(); I != E; ++I) {
     processStmt(*I);
   }
-  
+
   popIndent();
 }
